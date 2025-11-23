@@ -50,5 +50,42 @@ const registerUser = async(req,res) =>{
 
 
 
+const loginUser = async(req,res) =>{
+    try {
+         const {email,password} = req.body;
+         
+        //  check the existing user with email
+        const user = await User.findOne({email});
+        if(!user){
+            return response(res,404,'User not found with this email')
+        }
+       
+        const matchPassword = await bcrypt.compare(password,user.password)
+        if(!matchPassword){
+            return response(res,404,'Invalid Password')
+        }
+        
+        const accessToken = generateToken(user);
 
-module.exports = {registerUser}
+        res.cookie("auth_token",accessToken,{
+            httpOnly: true,
+            sameSite:"none",
+            secure:true
+        })
+
+
+        return response(res,201,"User logged in successfully",{
+             username:user.username,
+             email:user.email
+        })
+
+    } catch (error) {
+        console.error(error)
+        return response(res,500,"Internal Server Error",error.message)
+    }
+}
+
+
+
+
+module.exports = {registerUser,loginUser}
